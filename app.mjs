@@ -44,7 +44,6 @@ function pointLimit() {
 function showMap() {
   if (matchMedia('(max-width: 720px)').matches) {
     $('route-settings').open = false;
-    mapPanel.scrollIntoView({ block: 'start' });
   }
 }
 
@@ -157,7 +156,12 @@ function fitRoute() {
     bounds.extend([reference + (((lon - reference + 540) % 360) - 180), lat]);
   }
   map.fitBounds(bounds, {
-    padding: { top: 68, left: 54, right: 68, bottom: mapPanel.clientHeight < 500 ? 136 : 151 },
+    padding: {
+      top: 68, left: 54, right: 68,
+      bottom: matchMedia('(max-width: 720px)').matches
+        ? Math.min(280, Math.max(100, mapPanel.clientHeight - 148))
+        : mapPanel.clientHeight < 500 ? 136 : 151
+    },
     maxZoom: 16,
     duration: 600
   });
@@ -231,6 +235,9 @@ function initMap() {
   try {
     map = new maplibre.Map({
       container: 'map', style: 'https://tiles.openfreemap.org/styles/liberty', center: [-.01 + start[0], -.006 + start[1]], zoom: 13.6,
+      attributionControl: {
+        customAttribution: '<a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Исправить карту</a>'
+      },
       minZoom: 2, maxZoom: 19, maxPitch: 0, dragRotate: false, pitchWithRotate: false, locale: {
         'AttributionControl.ToggleAttribution': 'Источники карты', 'Map.Title': 'Карта, выбери старт'
       }
@@ -383,6 +390,7 @@ $('download').addEventListener('click', download);
 $('reroute').addEventListener('click', () => void buildRoute(true));
 $('about-open').addEventListener('click', () => $('about').showModal());
 
+if (matchMedia('(max-width: 720px)').matches) $('route-settings').open = false;
 updateModeFields();
 initMap();
 redraw();

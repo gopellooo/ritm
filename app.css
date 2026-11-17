@@ -151,16 +151,29 @@ dialog p { font-size: 14px; color: var(--muted); }
   .map-panel { min-height: max(555px, calc(100svh - 138px)); }
 }
 @media (max-width: 720px) {
-  body { padding-bottom: calc(130px + env(safe-area-inset-bottom)); }
-  .bar { position: sticky; top: 0; z-index: 4; background: var(--page); }
+  body { height: 100dvh; overflow: hidden; }
+  .bar { position: relative; z-index: 4; background: var(--page); }
   .bar-inner, .layout, .footer { width: calc(100% - 30px); }
   .bar-inner { height: 62px; }
-  .layout { grid-template-columns: minmax(0, 1fr); padding-top: 12px; gap: 12px; }
-  .planner { position: sticky; top: 62px; z-index: 2; padding-top: 0; background: var(--page); }
+  .layout { display: block; width: 100%; height: calc(100dvh - 63px); padding: 0; }
+  .planner { display: contents; }
   .planner h1, .planner .intro { display: none; }
-  .settings { border: 1px solid var(--rule); border-radius: 13px; background: var(--paper); }
-  .settings summary { padding: 11px 13px; min-height: 47px; }
+  .route-form {
+    position: fixed; z-index: 3; bottom: 0; left: 0; right: 0;
+    display: flex; flex-direction: column; gap: 8px;
+    max-height: calc(100dvh - 75px); pointer-events: none;
+  }
+  .settings {
+    flex: 0 1 auto; min-height: 47px; overflow: auto;
+    margin: 0 max(15px, env(safe-area-inset-right)) 0 max(15px, env(safe-area-inset-left));
+    border: 1px solid var(--rule); border-radius: 13px; background: var(--paper);
+    box-shadow: 0 -4px 20px #18221918; pointer-events: auto;
+    overscroll-behavior-y: contain;
+  }
+  .settings summary { position: sticky; z-index: 1; top: 0; padding: 11px 13px; min-height: 47px; background: var(--paper); }
   .settings[open] summary { margin: 0; border-bottom: 1px solid var(--rule); }
+  .settings summary svg { transform: rotate(180deg); }
+  .settings[open] summary svg { transform: none; }
   .settings-fields { gap: 12px; padding: 11px 12px 13px; }
   .mode .control { min-height: 44px; }
   .point-list {
@@ -178,16 +191,19 @@ dialog p { font-size: 14px; color: var(--muted); }
   .point-list .remove-point { position: absolute; top: -3px; right: -2px; min-height: 44px; min-width: 44px; }
   .show-map { display: flex; width: 100%; min-height: 42px; margin-top: 8px; color: var(--green); }
   .build-dock {
-    position: fixed; z-index: 3; bottom: 0; left: 0; right: 0;
+    flex: none; pointer-events: auto;
     background: var(--page); border-top: 1px solid var(--rule);
     padding: 9px max(15px, env(safe-area-inset-right)) calc(9px + env(safe-area-inset-bottom)) max(15px, env(safe-area-inset-left));
   }
   .build { min-height: 49px; }
-  .map-panel { border-radius: 16px; min-height: max(320px, calc(100svh - 212px)); scroll-margin-top: 125px; }
+  .map-panel { width: 100%; height: 100%; min-height: 0; border: 0; border-radius: 0; }
+  .footer { display: none; }
   .map-location, .map-tools { top: 10px; }
   .map-location, .result { left: 10px; }
   .map-tools { right: 10px; }
-  .result { max-width: calc(100% - 20px); bottom: 32px; }
+  .result { max-width: calc(100% - 20px); bottom: calc(200px + env(safe-area-inset-bottom)); }
+  .map-picker button { bottom: calc(192px + env(safe-area-inset-bottom)); }
+  .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { bottom: calc(128px + env(safe-area-inset-bottom)); }
 }
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition-duration: .001ms !important; }
