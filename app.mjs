@@ -1,4 +1,4 @@
-import { makeGpx, planRun } from './router.mjs';
+import { makeGpx, planRun } from './router.mjs?v=2';
 
 const $ = id => document.getElementById(id);
 const demoStart = [37.59943, 55.73106];
