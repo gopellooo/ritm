@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Выберите старт и дистанцию. Ритм построит маршрут для пробежки по пешеходным дорожкам.">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#f8f8f2">
+  <title>Ритм — маршруты для бега</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;750;800;850&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.9.0/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="./app.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.9.0/dist/maplibre-gl.js"></script>
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M2.5 13h5l3-7 4 12 2.5-5H22"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></symbol>
+    <symbol id="i-loop" viewBox="0 0 24 24"><path d="M20 10a8 8 0 1 0-.8 6M20 4v6h-6"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M4 8h16m-4-4 4 4-4 4m4 4H4m4-4-4 4 4 4"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4m-11 6v3h14v-3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+  </svg>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="brand" href="./" aria-label="Ритм, главная"><span class="brand-icon"><svg><use href="#i-activity"/></svg></span>ритм<span class="brand-point">.</span></a>
+      <button id="about-open" class="about-open" type="button"><svg><use href="#i-info"/></svg>О карте</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="planner" aria-labelledby="planner-title">
+      <h1 id="planner-title">Маршрут<br> для <em>бега<span>.</span></em></h1>
+      <p class="intro">Выбери старт и дистанцию, а Ритм проложит путь по пешеходным дорожкам.</p>
+
+      <form id="planner-form" class="route-form">
+        <div class="field">
+          <label id="start-label">Точка старта</label>
+          <div class="start-row">
+            <button id="pick-start" class="control start-control" type="button" aria-labelledby="start-label start-name" aria-pressed="false">
+              <svg><use href="#i-pin"/></svg><span id="start-name">Парк Горького, Москва</span>
+            </button>
+            <button class="control icon-button" id="locate" type="button" aria-label="Моё местоположение" title="Моё местоположение"><svg><use href="#i-locate"/></svg></button>
+          </div>
+          <p id="start-help" class="help">Нажми на карту, чтобы изменить старт.</p>
+        </div>
+
+        <fieldset class="field">
+          <legend>Дистанция</legend>
+          <div class="distance-row">
+            <div class="presets" aria-label="Готовые дистанции">
+              <button class="control preset" type="button" data-km="3" aria-pressed="false">3</button>
+              <button class="control preset" type="button" data-km="5" aria-pressed="true">5</button>
+              <button class="control preset" type="button" data-km="10" aria-pressed="false">10</button>
+              <button class="control preset" type="button" data-km="15" aria-pressed="false">15</button>
+            </div>
+            <label class="control distance-input"><input id="distance" type="number" min="1" max="30" step="0.1" value="5" required aria-label="Дистанция в километрах"><span>км</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="field">
+          <legend>Тип маршрута</legend>
+          <div class="mode-row">
+            <label class="mode"><input name="mode" type="radio" value="loop" checked><span class="control"><svg><use href="#i-loop"/></svg>Кольцо</span></label>
+            <label class="mode"><input name="mode" type="radio" value="back"><span class="control"><svg><use href="#i-back"/></svg>Туда-обратно</span></label>
+          </div>
+        </fieldset>
+
+        <button class="build" id="build" type="submit"><span id="build-label">Построить маршрут</span><svg><use href="#i-next"/></svg></button>
+        <p id="form-status" class="form-status" role="status"></p>
+      </form>
+    </section>
+
+    <section class="map-panel" aria-label="Карта пробежки">
+      <div id="map"></div>
+      <div class="map-message" id="map-message" role="status" hidden></div>
+      <div class="map-location"><span></span><span id="map-location">Москва · Парк Горького</span></div>
+      <div class="map-tools" id="map-tools" hidden>
+        <div class="zoom-control">
+          <button id="zoom-in" type="button" aria-label="Увеличить"><svg><use href="#i-plus"/></svg></button>
+          <button id="zoom-out" type="button" aria-label="Уменьшить"><svg><use href="#i-minus"/></svg></button>
+        </div>
+        <button id="fit" type="button" aria-label="Показать весь маршрут" title="Показать весь маршрут"><svg><use href="#i-fit"/></svg></button>
+      </div>
+      <div id="map-picker" class="map-picker" hidden>
+        <span class="map-cross" aria-hidden="true">+</span>
+        <button id="choose-center" class="control" type="button"><svg><use href="#i-pin"/></svg>Старт в центре карты</button>
+      </div>
+      <article id="result" class="result" aria-label="Маршрут" hidden>
+        <div class="result-top"><div><span id="result-type" class="result-type">Кольцевой маршрут</span><div class="result-distance"><strong id="actual-km"></strong> км</div></div><span class="result-icon"><svg id="result-icon"><use href="#i-loop"/></svg></span></div>
+        <div class="result-actions">
+          <button id="download" class="control" type="button"><svg><use href="#i-download"/></svg>GPX</button>
+          <button id="reroute" class="control reroute" type="button"><svg><use href="#i-loop"/></svg>Другой вариант</button>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer"><span>Карта <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a> · Маршруты <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS / OSRM</a></span><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Сообщить об ошибке на карте ↗</a></footer>
+
+  <dialog id="about">
+    <form method="dialog"><button class="control icon-button close-about" aria-label="Закрыть"><svg><use href="#i-close"/></svg></button></form>
+    <h2>Карта и маршруты</h2>
+    <p><a href="https://openfreemap.org/">OpenFreeMap</a> бесплатно показывает данные <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>. Пешеходный сервер <a href="https://routing.openstreetmap.de/about.html">FOSSGIS</a> рассчитывает маршрут по этим данным.</p>
+    <p>Фактическая длина зависит от дорожек вокруг старта. Кольцо может включать общие участки в начале и конце.</p>
+    <p>Когда ты строишь маршрут, координаты старта и промежуточных точек передаются серверу FOSSGIS. При использовании карты OpenFreeMap получает запросы на загрузку просматриваемых участков.</p>
+  </dialog>
+</body>
+</html>
