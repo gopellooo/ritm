@@ -57,25 +57,28 @@ async function directions(points, signal) {
   return { coordinates: route.geometry.coordinates, km: route.distance / 1000 };
 }
 
-export async function planRun({ start, km, mode, heading, signal }) {
+export async function planRun({ start, km, mode, heading, signal, maxKm }) {
+  const target = Math.min(km, maxKm * .98);
   let best;
   let scale = 1;
   for (const turn of [0, 117, 241]) {
     let route;
     try {
-      route = await directions(waypoints(start, km * scale, mode, heading + turn), signal);
+      route = await directions(waypoints(start, target * scale, mode, heading + turn), signal);
     } catch (error) {
       if (best && !signal.aborted) return best.route;
       throw error;
     }
     if (!route || route.km <= 0) continue;
 
+    scale = Math.max(.6, Math.min(1.5, scale * target / route.km));
+    if (route.km > maxKm) continue;
+
     const error = Math.abs(route.km / km - 1);
     const repeat = mode === 'loop' ? overlap(route.coordinates) : 0;
     const score = error + repeat * .7;
     if (!best || score < best.score) best = { route, score };
     if (error <= .085 && repeat < .2) break;
-    scale = Math.max(.6, Math.min(1.5, scale * km / route.km));
   }
   if (best) return best.route;
   throw new Error('Рядом не нашлось подходящего пути. Перенеси старт ближе к пешеходной дорожке или измени дистанцию.');

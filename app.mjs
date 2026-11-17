@@ -145,7 +145,7 @@ async function buildRoute(another = false) {
   busy(true);
   status('Подбираем путь по пешеходным дорожкам…');
   try {
-    const result = await planRun({ start, km, mode, heading, signal });
+    const result = await planRun({ start, km, mode, heading, signal, maxKm: Number(distance.max) });
     signal.throwIfAborted();
     route = { ...result, mode };
     redraw();
