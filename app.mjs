@@ -1,7 +1,7 @@
 import { makeGpx, planRun, planThroughPoints, planPointsDistance } from './router.mjs?v=4';
 
 const $ = id => document.getElementById(id);
-const demoStart = [37.59943, 55.73106];
+const defaultStart = [37.09832, 55.94638];
 const number = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const form = $('planner-form');
 const distance = $('distance');
@@ -17,8 +17,8 @@ const routeLabels = {
   points: ['Маршрут по точкам', '#i-points'],
   target: ['Точки + дистанция', '#i-pin']
 };
-let start = demoStart;
-let startCaption = 'Москва · Парк Горького';
+let start = defaultStart;
+let startCaption = 'Старт · 55.94638, 37.09832';
 let heading = 196;
 let route;
 let request;
@@ -26,7 +26,6 @@ let map;
 let marker;
 let picking = false;
 let startVersion = 0;
-let inputVersion = 0;
 
 function status(message = '', error = false) {
   $('form-status').textContent = message;
@@ -133,7 +132,7 @@ function redraw() {
   if (route) {
     const [label, icon] = routeLabels[route.mode];
     $('actual-km').textContent = number.format(route.km);
-    $('result-type').textContent = route.demo ? 'Пример кольцевого маршрута' : label;
+    $('result-type').textContent = label;
     $('result-icon').firstElementChild.setAttribute('href', icon);
   }
   $('reroute').hidden = mode === 'points';
@@ -181,7 +180,6 @@ function busy(next) {
 }
 
 function invalidate() {
-  ++inputVersion;
   request?.abort();
   request = null;
   route = null;
@@ -234,7 +232,7 @@ function mapMessage(message) {
 function initMap() {
   try {
     map = new maplibre.Map({
-      container: 'map', style: 'https://tiles.openfreemap.org/styles/liberty', center: [-.01 + start[0], -.006 + start[1]], zoom: 13.6,
+      container: 'map', style: 'https://tiles.openfreemap.org/styles/liberty', center: start, zoom: 13.6,
       attributionControl: {
         customAttribution: '<a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Исправить карту</a>'
       },
@@ -394,9 +392,3 @@ if (matchMedia('(max-width: 720px)').matches) $('route-settings').open = false;
 updateModeFields();
 initMap();
 redraw();
-fetch('./demo.json').then(response => response.ok ? response.json() : null).then(demo => {
-  if (!demo || form.elements.mode.value !== 'loop' || inputVersion || request || route) return;
-  route = { ...demo, mode: 'loop', demo: true };
-  redraw();
-  if (map?.getSource('run')) fitRoute();
-}).catch(() => {});

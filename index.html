@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.9.0/dist/maplibre-gl.css">
   <link rel="stylesheet" href="./app.css?v=5">
   <script defer src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.9.0/dist/maplibre-gl.js"></script>
-  <script type="module" src="./app.mjs?v=5"></script>
+  <script type="module" src="./app.mjs?v=6"></script>
 </head>
 <body>
   <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -62,7 +62,7 @@
           <label id="start-label">Точка старта</label>
           <div class="start-row">
             <button id="pick-start" class="control start-control" type="button" aria-labelledby="start-label start-name" aria-pressed="false">
-              <svg><use href="#i-pin"/></svg><span id="start-name">Парк Горького, Москва</span>
+              <svg><use href="#i-pin"/></svg><span id="start-name">55.94638, 37.09832</span>
             </button>
             <button class="control icon-button" id="locate" type="button" aria-label="Моё местоположение" title="Моё местоположение"><svg><use href="#i-locate"/></svg></button>
           </div>
@@ -100,7 +100,7 @@
     <section class="map-panel" aria-label="Карта пробежки">
       <div id="map"></div>
       <div class="map-message" id="map-message" role="status" hidden></div>
-      <div class="map-location"><span></span><span id="map-location">Москва · Парк Горького</span></div>
+      <div class="map-location"><span></span><span id="map-location">Старт · 55.94638, 37.09832</span></div>
       <div class="map-tools" id="map-tools" hidden>
         <div class="zoom-control">
           <button id="zoom-in" type="button" aria-label="Увеличить"><svg><use href="#i-plus"/></svg></button>
