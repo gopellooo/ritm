@@ -42,7 +42,15 @@ h1 { margin: 0; font-size: clamp(47px, 5.25vw, 78px); line-height: .99; letter-s
 h1 em { font-style: normal; color: #365d3a; }
 h1 em span { color: #6a8b2e; }
 .intro { margin: 19px 0 28px; width: min(100%, 320px); color: var(--muted); font-size: 15px; line-height: 1.55; }
-.route-form { display: grid; gap: 20px; }
+.route-form, .settings-fields { display: grid; gap: 20px; }
+.settings summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; list-style: none; cursor: pointer; font-size: 13px; font-weight: 750; }
+.settings summary::-webkit-details-marker { display: none; }
+.settings summary:focus-visible { outline: 3px solid #356c43; outline-offset: 3px; }
+.settings summary small { display: block; flex: 1; min-width: 0; color: var(--muted); text-align: right; font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.settings summary svg { width: 17px; height: 17px; }
+.settings[open] summary svg { transform: rotate(180deg); }
+.settings[open] summary { margin-bottom: 13px; }
+.build-dock { display: grid; gap: 7px; }
 .field { margin: 0; padding: 0; border: 0; min-width: 0; }
 .field > label, legend { display: block; margin: 0 0 8px; padding: 0; font-size: 13px; font-weight: 750; }
 .control { min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); min-height: 45px; font-size: 13px; font-weight: 650; transition: background .15s, border-color .15s; }
@@ -53,7 +61,8 @@ button.control:hover:not(:disabled), .mode:hover .control { border-color: #9aa89
 .start-control svg, .mode svg, .icon-button { color: var(--green); }
 .icon-button { width: 46px; flex: none; }
 .help, .form-status { margin: 6px 0 0; color: var(--muted); font-size: 12px; min-height: 18px; }
-.form-status { margin-top: -10px; }
+.form-status { margin: 0; }
+.form-status:empty { display: none; }
 .form-status[data-error='true'] { color: #9c321e; }
 
 .presets { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
@@ -62,20 +71,20 @@ button.control:hover:not(:disabled), .mode:hover .control { border-color: #9aa89
 .distance-input { width: 80px; gap: 3px; padding: 0 7px; color: var(--muted); }
 .distance-input input { width: 40px; min-width: 0; border: 0; background: transparent; padding: 3px 1px; color: var(--ink); text-align: center; appearance: textfield; }
 .distance-input input::-webkit-inner-spin-button, .distance-input input::-webkit-outer-spin-button { appearance: none; margin: 0; }
-.mode-row { display: grid; grid-template-columns: .85fr 1.28fr 1fr; gap: 8px; }
-.finish-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.mode-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .mode { position: relative; cursor: pointer; }
 .mode input { opacity: 0; position: absolute; width: 1px; height: 1px; }
 .mode input:checked + .control { border-color: #89a57b; background: #e6eedc; }
-.mode .control { gap: 5px; font-size: 12px; white-space: nowrap; }
+.mode .control { gap: 5px; font-size: 12px; text-align: center; padding: 0 4px; }
 .mode svg { width: 15px; height: 15px; }
-.point-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 6px; }
+.point-list { list-style: none; padding: 0 3px 0 0; margin: 8px 0 0; display: grid; gap: 6px; max-height: 183px; overflow: auto; }
 .point-list li { min-height: 43px; padding: 4px 6px 4px 9px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); }
 .point-badge { width: 24px; height: 24px; border-radius: 50%; display: grid; flex: none; place-items: center; background: var(--green); color: var(--lime); font-size: 12px; font-weight: 800; }
 .point-description { flex: 1; display: grid; font-size: 12px; font-weight: 700; }
 .point-description small { color: var(--muted); font-weight: 500; }
 .point-list .remove-point { border: 0; border-radius: 6px; min-height: 33px; min-width: 33px; padding: 0; background: transparent; font-size: 20px; line-height: 1; color: var(--green); }
 .point-list .remove-point:hover { background: #e6eedc; }
+.show-map { display: none; }
 
 .build { min-height: 57px; border: 1px solid transparent; background: var(--lime); font-size: 15px; font-weight: 800; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; padding: 0 17px; color: #1e2b14; text-align: left; transition: background .15s; }
 .build:hover:not(:disabled) { background: #bee746; }
@@ -136,23 +145,45 @@ dialog p { font-size: 14px; color: var(--muted); }
   .planner { padding-top: 13px; }
   h1 { font-size: clamp(47px, 5.1vw, 67px); }
   .intro { margin: 13px 0 21px; }
-  .route-form { gap: 16px; }
+  .route-form, .settings-fields { gap: 16px; }
   .control { min-height: 42px; }
   .build { min-height: 51px; }
   .map-panel { min-height: max(555px, calc(100svh - 138px)); }
 }
 @media (max-width: 720px) {
+  body { padding-bottom: calc(130px + env(safe-area-inset-bottom)); }
+  .bar { position: sticky; top: 0; z-index: 4; background: var(--page); }
   .bar-inner, .layout, .footer { width: calc(100% - 30px); }
   .bar-inner { height: 62px; }
-  .layout { grid-template-columns: minmax(0, 1fr); padding-top: 22px; gap: 15px; }
-  .planner { padding-top: 0; }
-  h1 { font-size: clamp(45px, 10.4vw, 66px); }
-  h1 br { display: none; }
-  h1 em { margin-left: .12em; }
-  .intro { margin: 12px 0 19px; }
-  .route-form { gap: 13px; }
-  .form-status { margin-top: -4px; }
-  .map-panel { border-radius: 16px; min-height: clamp(400px, 66vh, 570px); }
+  .layout { grid-template-columns: minmax(0, 1fr); padding-top: 12px; gap: 12px; }
+  .planner { position: sticky; top: 62px; z-index: 2; padding-top: 0; background: var(--page); }
+  .planner h1, .planner .intro { display: none; }
+  .settings { border: 1px solid var(--rule); border-radius: 13px; background: var(--paper); }
+  .settings summary { padding: 11px 13px; min-height: 47px; }
+  .settings[open] summary { margin: 0; border-bottom: 1px solid var(--rule); }
+  .settings-fields { gap: 12px; padding: 11px 12px 13px; }
+  .mode .control { min-height: 44px; }
+  .point-list {
+    grid-auto-flow: column; grid-auto-columns: max(110px, calc((100% - 14px) / 2.5)); gap: 7px;
+    max-height: none; padding: 3px 3px 7px; overflow-x: auto; overflow-y: hidden;
+    overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: thin;
+  }
+  .point-list li {
+    position: relative; display: flex; flex-direction: column; align-items: flex-start;
+    gap: 5px; min-height: 84px; padding: 7px; scroll-snap-align: start;
+  }
+  .point-list .point-badge { width: 22px; height: 22px; font-size: 11px; }
+  .point-description { display: block; width: 100%; min-width: 0; font-size: 11px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .point-description small { display: block; font-size: 9px; }
+  .point-list .remove-point { position: absolute; top: -3px; right: -2px; min-height: 44px; min-width: 44px; }
+  .show-map { display: flex; width: 100%; min-height: 42px; margin-top: 8px; color: var(--green); }
+  .build-dock {
+    position: fixed; z-index: 3; bottom: 0; left: 0; right: 0;
+    background: var(--page); border-top: 1px solid var(--rule);
+    padding: 9px max(15px, env(safe-area-inset-right)) calc(9px + env(safe-area-inset-bottom)) max(15px, env(safe-area-inset-left));
+  }
+  .build { min-height: 49px; }
+  .map-panel { border-radius: 16px; min-height: max(320px, calc(100svh - 212px)); scroll-margin-top: 125px; }
   .map-location, .map-tools { top: 10px; }
   .map-location, .result { left: 10px; }
   .map-tools { right: 10px; }

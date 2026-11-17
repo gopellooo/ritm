@@ -1,4 +1,4 @@
-import { makeGpx, planRun, planThroughPoints } from './router.mjs?v=3';
+import { makeGpx, planRun, planThroughPoints, planPointsDistance } from './router.mjs?v=4';
 
 const $ = id => document.getElementById(id);
 const demoStart = [37.59943, 55.73106];
@@ -8,12 +8,14 @@ const distance = $('distance');
 const pointList = $('point-list');
 const mapPanel = $('map').parentElement;
 const maplibre = window.maplibregl;
-const points = [];
+const pointSets = { points: [], target: [] };
+let points = pointSets.points;
 const pointMarkers = [];
 const routeLabels = {
   loop: ['Кольцевой маршрут', '#i-loop'],
   back: ['Маршрут туда-обратно', '#i-back'],
-  points: ['Маршрут по точкам', '#i-points']
+  points: ['Маршрут по точкам', '#i-points'],
+  target: ['Точки + дистанция', '#i-pin']
 };
 let start = demoStart;
 let startCaption = 'Москва · Парк Горького';
@@ -32,7 +34,18 @@ function status(message = '', error = false) {
 }
 
 function isPointsMode() {
-  return form.elements.mode.value === 'points';
+  return form.elements.mode.value in pointSets;
+}
+
+function pointLimit() {
+  return form.elements.mode.value === 'target' ? 3 : 10;
+}
+
+function showMap() {
+  if (matchMedia('(max-width: 720px)').matches) {
+    $('route-settings').open = false;
+    mapPanel.scrollIntoView({ block: 'start' });
+  }
 }
 
 function mapCoordinates(lngLat) {
@@ -50,14 +63,16 @@ function drawPoints(active) {
 
   pointList.replaceChildren();
   pointList.hidden = points.length === 0;
-  const returnToStart = form.elements.finish.value === 'start';
-  const hints = [
-    returnToStart ? 'Отметь старт и 1–2 точки, через которые пройдёт маршрут.' : 'Отметь старт и финиш. Точка между ними необязательна.',
-    returnToStart ? 'Добавь точку, через которую пройдёт маршрут.' : 'Добавь финиш или промежуточную точку.',
-    'Построй маршрут или добавь третью точку.',
-    'Можно построить маршрут. Чтобы заменить точку, сначала удали её из списка.'
-  ];
-  $('points-help').textContent = hints[points.length];
+  const limit = pointLimit();
+  if (points.length < 2) {
+    $('points-help').textContent = form.elements.mode.value === 'target'
+      ? 'Отметь 2–3 точки в порядке пробежки. Первая — старт, последняя — финиш. Подберём путь на заданную дистанцию.'
+      : 'Отметь от 2 до 10 точек в порядке пробежки. Первая — старт, последняя — финиш.';
+  } else {
+    $('points-help').textContent = points.length < limit
+      ? `Можно строить маршрут или добавить ещё точки, всего до ${limit}.`
+      : `Выбрано ${limit} точек. Чтобы заменить точку, сначала удали её из списка.`;
+  }
 
   points.forEach((point, index) => {
     const item = document.createElement('li');
@@ -68,11 +83,7 @@ function drawPoints(active) {
 
     const description = document.createElement('span');
     description.className = 'point-description';
-    if (index === 0) {
-      description.textContent = returnToStart ? 'Старт и финиш' : 'Старт';
-    } else {
-      description.textContent = !returnToStart && index === points.length - 1 ? 'Финиш' : 'Промежуточная точка';
-    }
+    description.textContent = index === 0 ? 'Старт' : index === points.length - 1 ? 'Финиш' : `Точка ${index + 1}`;
     const coords = document.createElement('small');
     coords.textContent = coordinatesLabel(point);
     description.append(coords);
@@ -100,7 +111,7 @@ function drawPoints(active) {
 }
 
 function updateMapOverlays(pointMode) {
-  $('map-picker').hidden = !map || !(picking || (pointMode && !route && points.length < 3));
+  $('map-picker').hidden = !map || !(picking || (pointMode && !route && points.length < pointLimit()));
   $('center-label').textContent = pointMode ? 'Добавить точку в центре' : 'Старт в центре карты';
   $('result').hidden = picking || !route;
 }
@@ -116,14 +127,17 @@ function redraw() {
   }
   drawPoints(pointMode);
   updateMapOverlays(pointMode);
-  $('map-location').textContent = pointMode ? `Точки маршрута · ${points.length} из 3` : startCaption;
+  $('map-location').textContent = pointMode ? `Точки маршрута · ${points.length} из ${pointLimit()}` : startCaption;
+  const mode = form.elements.mode.value;
+  const modeName = mode === 'loop' ? 'Кольцо' : 'Туда-обратно';
+  $('settings-summary').textContent = pointMode ? `${points.length}/${pointLimit()} точек${mode === 'target' ? ` · ${distance.value} км` : ''}` : `${modeName} · ${distance.value} км`;
   if (route) {
-    const [label, icon] = route.returnToStart ? ['Круг по точкам', '#i-loop'] : routeLabels[route.mode];
+    const [label, icon] = routeLabels[route.mode];
     $('actual-km').textContent = number.format(route.km);
     $('result-type').textContent = route.demo ? 'Пример кольцевого маршрута' : label;
     $('result-icon').firstElementChild.setAttribute('href', icon);
   }
-  $('reroute').hidden = pointMode;
+  $('reroute').hidden = mode === 'points';
   $('fit').disabled = pointMode && points.length === 0;
   $('fit').setAttribute('aria-label', route ? 'Показать весь маршрут' : pointMode ? 'Показать выбранные точки' : 'Показать точку старта');
   $('fit').title = $('fit').getAttribute('aria-label');
@@ -189,8 +203,8 @@ function selectMapPoint(lngLat) {
     chooseStart(lngLat);
     return;
   }
-  if (points.length === 3) {
-    status('Уже выбрано 3 точки. Удали одну из них, чтобы добавить новую.', true);
+  if (points.length >= pointLimit()) {
+    status(`Уже выбрано ${pointLimit()} точек. Удали одну из них, чтобы добавить новую.`, true);
     return;
   }
   points.push(mapCoordinates(lngLat));
@@ -199,11 +213,12 @@ function selectMapPoint(lngLat) {
 
 function updateModeFields() {
   const pointMode = isPointsMode();
+  const mode = form.elements.mode.value;
+  if (pointMode) points = pointSets[mode];
   $('start-field').hidden = pointMode;
-  $('distance-field').hidden = pointMode;
-  $('finish-field').hidden = !pointMode;
+  $('distance-field').hidden = mode === 'points';
   $('points-field').hidden = !pointMode;
-  distance.disabled = pointMode;
+  distance.disabled = mode === 'points';
   setPicking(false);
 }
 
@@ -248,7 +263,12 @@ function initMap() {
 }
 
 async function buildRoute(another = false) {
-  if (request || !form.reportValidity()) return;
+  if (request) return;
+  if (!form.checkValidity()) {
+    $('route-settings').open = true;
+    form.reportValidity();
+    return;
+  }
   const pointMode = isPointsMode();
   if (pointMode && points.length < 2) {
     status('Отметь на карте хотя бы 2 точки.', true);
@@ -260,18 +280,22 @@ async function buildRoute(another = false) {
   const km = Number(distance.value);
   const mode = form.elements.mode.value;
   const maxKm = Number(distance.max);
-  const returnToStart = form.elements.finish.value === 'start';
   if (another) heading += 57;
   const previousRoute = route;
   setPicking(false);
   busy(true);
   status('Подбираем путь по пешеходным дорожкам…');
   try {
-    const result = pointMode
-      ? await planThroughPoints({ points: [...points], signal, maxKm, returnToStart })
-      : await planRun({ start, km, mode, heading, signal, maxKm });
+    let result;
+    if (mode === 'target') {
+      result = await planPointsDistance({ points: [...points], km, heading, signal, maxKm });
+    } else if (mode === 'points') {
+      result = await planThroughPoints({ points: [...points], signal, maxKm });
+    } else {
+      result = await planRun({ start, km, mode, heading, signal, maxKm });
+    }
     signal.throwIfAborted();
-    route = { ...result, mode, returnToStart: pointMode && returnToStart };
+    route = { ...result, mode };
     redraw();
     fitRoute();
     const difference = Math.abs(result.km - km);
@@ -280,7 +304,7 @@ async function buildRoute(another = false) {
     } else {
       status(!pointMode && difference / km > .15 ? `Ближайший из найденных вариантов — ${number.format(result.km)} км.` : `Маршрут готов · ${number.format(result.km)} км`);
     }
-    if (matchMedia('(max-width: 720px)').matches) mapPanel.scrollIntoView({ block: 'start' });
+    showMap();
   } catch (error) {
     if (!signal.aborted) status(error.message, true);
   } finally {
@@ -341,11 +365,11 @@ document.querySelectorAll('[name="mode"]').forEach(input => input.addEventListen
   updateModeFields();
   invalidate();
 }));
-document.querySelectorAll('[name="finish"]').forEach(input => input.addEventListener('change', invalidate));
+$('show-map').addEventListener('click', showMap);
 $('pick-start').addEventListener('click', () => {
   if (!map) { status('Карта недоступна. Обнови страницу.', true); return; }
   setPicking(!picking);
-  if (picking && matchMedia('(max-width: 720px)').matches) mapPanel.scrollIntoView({ block: 'start' });
+  if (picking) showMap();
 });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && picking) setPicking(false);

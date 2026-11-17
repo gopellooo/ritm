@@ -38,7 +38,7 @@ async function directions(points, signal, snapRadius) {
   lastRequest = performance.now();
 
   const coordinates = points.map(point => point.map(value => value.toFixed(6)).join(',')).join(';');
-  const radiuses = points.map((_, i) => snapRadius ?? (i === 0 || i === points.length - 1 ? 120 : 260)).join(';');
+  const radiuses = points.map((_, i) => Array.isArray(snapRadius) ? snapRadius[i] : snapRadius ?? (i === 0 || i === points.length - 1 ? 120 : 260)).join(';');
   const url = `${ENDPOINT}${coordinates}?overview=full&geometries=geojson&generate_hints=false&radiuses=${radiuses}`;
   let response;
   let data;
@@ -88,23 +88,49 @@ export async function planRun({ start, km, mode, heading, signal, maxKm }) {
   throw new Error('Рядом не нашлось подходящего пути. Перенеси старт ближе к пешеходной дорожке или измени дистанцию.');
 }
 
-export async function planThroughPoints({ points, signal, maxKm, returnToStart = false }) {
-  const stops = returnToStart ? [...points, points[0]] : points;
-  const route = await directions(stops, signal, 35);
-  if (!route || !(route.km > 0) || route.waypoints?.length !== stops.length) {
+export async function planThroughPoints({ points, signal, maxKm }) {
+  if (points.length < 2 || points.length > 10) throw new Error('Выбери от 2 до 10 точек.');
+  const route = await directions(points, signal, 35);
+  if (!route || !(route.km > 0) || route.waypoints?.length !== points.length) {
     throw new Error('Не удалось проложить пешеходный маршрут через все точки. Попробуй перенести отметки ближе к дорожкам.');
-  }
-  const finish = route.waypoints.at(-1);
-  const sameEndpoint = route.waypoints[0].every((coordinate, index) => coordinate === finish[index]);
-  if (sameEndpoint !== returnToStart) {
-    throw new Error(returnToStart
-      ? 'Не удалось вернуться в точку старта. Попробуй поставить старт точнее на дорожке.'
-      : 'Старт и финиш совпали. Выбери другую точку финиша или включи «В точке старта».');
   }
   if (route.km > maxKm) {
     throw new Error(`Маршрут через эти точки длиннее ${maxKm} км. Выбери точки ближе друг к другу.`);
   }
   return route;
+}
+
+export async function planPointsDistance({ points, km, heading, signal, maxKm }) {
+  if (points.length < 2 || points.length > 3) throw new Error('Для заданной дистанции выбери 2 или 3 точки.');
+  const base = await planThroughPoints({ points, signal, maxKm });
+  const tolerance = Math.max(.1, km * .085);
+  if (base.km > km + tolerance) {
+    throw new Error(`Кратчайший путь через эти точки — ${base.km.toFixed(1).replace('.', ',')} км. Увеличь дистанцию или перенеси точки ближе.`);
+  }
+  if (Math.abs(base.km - km) <= tolerance) return base;
+
+  const extra = km - base.km;
+  const targetExtra = Math.min(km, maxKm * .98) - base.km;
+  let scale = 1;
+  let best;
+  for (const turn of [0, 117, 241, 63]) {
+    const loop = waypoints(points[0], targetExtra * scale, 'loop', heading + turn);
+    const stops = [...loop, ...points.slice(1)];
+    const radiuses = stops.map((_, index) => index > 0 && index < 4 ? 260 : 35);
+    const candidate = await directions(stops, signal, radiuses);
+    if (!candidate || candidate.waypoints?.length !== stops.length) continue;
+
+    const added = candidate.km - base.km;
+    if (added > 0) scale = Math.max(.3, Math.min(2.5, scale * extra / added));
+    if (candidate.km > maxKm) continue;
+    const error = Math.abs(candidate.km - km);
+    if (!best || error < best.error) {
+      best = { error, route: { ...candidate, waypoints: [candidate.waypoints[0], ...candidate.waypoints.slice(5)] } };
+    }
+    if (error <= tolerance) return best.route;
+  }
+  if (best?.error <= tolerance) return best.route;
+  throw new Error(`Не удалось подобрать маршрут на ${km.toFixed(1).replace('.', ',')} км через эти точки. Попробуй другую дистанцию или расположение точек.`);
 }
 
 export function makeGpx(coordinates) {

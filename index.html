@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="description" content="Выберите старт и дистанцию. Ритм построит маршрут для пробежки по пешеходным дорожкам.">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="theme-color" content="#f8f8f2">
@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;750;800;850&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.9.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="./app.css?v=3">
+  <link rel="stylesheet" href="./app.css?v=4">
   <script defer src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.9.0/dist/maplibre-gl.js"></script>
-  <script type="module" src="./app.mjs?v=3"></script>
+  <script type="module" src="./app.mjs?v=4"></script>
 </head>
 <body>
   <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -30,6 +30,7 @@
     <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/></symbol>
     <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></symbol>
     <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
   </svg>
   <header class="bar">
     <div class="bar-inner">
@@ -43,13 +44,17 @@
       <h1 id="planner-title">Маршрут<br> для <em>бега<span>.</span></em></h1>
       <p class="intro">Выбери старт и дистанцию или отметь точки на карте.</p>
 
-      <form id="planner-form" class="route-form">
+      <form id="planner-form" class="route-form" novalidate>
+        <details id="route-settings" class="settings" open>
+          <summary><span>Настройки</span><small id="settings-summary"></small><svg aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+          <div class="settings-fields">
         <fieldset class="field">
           <legend>Тип маршрута</legend>
           <div class="mode-row">
             <label class="mode"><input name="mode" type="radio" value="loop" checked><span class="control"><svg><use href="#i-loop"/></svg>Кольцо</span></label>
             <label class="mode"><input name="mode" type="radio" value="back"><span class="control"><svg><use href="#i-back"/></svg>Туда-обратно</span></label>
             <label class="mode"><input name="mode" type="radio" value="points"><span class="control"><svg><use href="#i-points"/></svg>По точкам</span></label>
+            <label class="mode"><input name="mode" type="radio" value="target"><span class="control"><svg><use href="#i-pin"/></svg>Точки + дистанция</span></label>
           </div>
         </fieldset>
 
@@ -77,21 +82,18 @@
           </div>
         </fieldset>
 
-        <fieldset class="field" id="finish-field" hidden>
-          <legend>Где финиш?</legend>
-          <div class="finish-row">
-            <label class="mode"><input name="finish" type="radio" value="different" checked><span class="control">В другой точке</span></label>
-            <label class="mode"><input name="finish" type="radio" value="start"><span class="control">В точке старта</span></label>
-          </div>
-        </fieldset>
         <fieldset class="field" id="points-field" hidden>
           <legend>Точки маршрута</legend>
           <p id="points-help" class="help" role="status"></p>
           <ol id="point-list" class="point-list" aria-label="Выбранные точки" hidden></ol>
+          <button id="show-map" class="control show-map" type="button"><svg><use href="#i-pin"/></svg>Отметить на карте</button>
         </fieldset>
-
-        <button class="build" id="build" type="submit"><span id="build-label">Построить маршрут</span><svg><use href="#i-next"/></svg></button>
-        <p id="form-status" class="form-status" role="status"></p>
+          </div>
+        </details>
+        <div class="build-dock">
+          <button class="build" id="build" type="submit"><span id="build-label">Построить маршрут</span><svg><use href="#i-next"/></svg></button>
+          <p id="form-status" class="form-status" role="status"></p>
+        </div>
       </form>
     </section>
 
