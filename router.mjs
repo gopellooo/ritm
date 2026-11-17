@@ -31,14 +31,14 @@ function overlap(coordinates) {
   return length ? repeated / length : 1;
 }
 
-async function directions(points, signal) {
+async function directions(points, signal, snapRadius) {
   const delay = Math.max(0, 1100 - (performance.now() - lastRequest));
   if (delay) await new Promise(resolve => setTimeout(resolve, delay));
   signal.throwIfAborted();
   lastRequest = performance.now();
 
   const coordinates = points.map(point => point.map(value => value.toFixed(6)).join(',')).join(';');
-  const radiuses = points.map((_, i) => i === 0 || i === points.length - 1 ? 120 : 260).join(';');
+  const radiuses = points.map((_, i) => snapRadius ?? (i === 0 || i === points.length - 1 ? 120 : 260)).join(';');
   const url = `${ENDPOINT}${coordinates}?overview=full&geometries=geojson&generate_hints=false&radiuses=${radiuses}`;
   let response;
   let data;
@@ -54,7 +54,11 @@ async function directions(points, signal) {
   if (!response.ok || data.code !== 'Ok' || !route?.geometry?.coordinates?.length) {
     throw new Error('Сервис маршрутов временно недоступен. Попробуй ещё раз чуть позже.');
   }
-  return { coordinates: route.geometry.coordinates, km: route.distance / 1000 };
+  return {
+    coordinates: route.geometry.coordinates,
+    km: route.distance / 1000,
+    waypoints: data.waypoints?.map(point => point.location)
+  };
 }
 
 export async function planRun({ start, km, mode, heading, signal, maxKm }) {
@@ -82,6 +86,25 @@ export async function planRun({ start, km, mode, heading, signal, maxKm }) {
   }
   if (best) return best.route;
   throw new Error('Рядом не нашлось подходящего пути. Перенеси старт ближе к пешеходной дорожке или измени дистанцию.');
+}
+
+export async function planThroughPoints({ points, signal, maxKm, returnToStart = false }) {
+  const stops = returnToStart ? [...points, points[0]] : points;
+  const route = await directions(stops, signal, 35);
+  if (!route || !(route.km > 0) || route.waypoints?.length !== stops.length) {
+    throw new Error('Не удалось проложить пешеходный маршрут через все точки. Попробуй перенести отметки ближе к дорожкам.');
+  }
+  const finish = route.waypoints.at(-1);
+  const sameEndpoint = route.waypoints[0].every((coordinate, index) => coordinate === finish[index]);
+  if (sameEndpoint !== returnToStart) {
+    throw new Error(returnToStart
+      ? 'Не удалось вернуться в точку старта. Попробуй поставить старт точнее на дорожке.'
+      : 'Старт и финиш совпали. Выбери другую точку финиша или включи «В точке старта».');
+  }
+  if (route.km > maxKm) {
+    throw new Error(`Маршрут через эти точки длиннее ${maxKm} км. Выбери точки ближе друг к другу.`);
+  }
+  return route;
 }
 
 export function makeGpx(coordinates) {

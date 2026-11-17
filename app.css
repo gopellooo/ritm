@@ -62,17 +62,26 @@ button.control:hover:not(:disabled), .mode:hover .control { border-color: #9aa89
 .distance-input { width: 80px; gap: 3px; padding: 0 7px; color: var(--muted); }
 .distance-input input { width: 40px; min-width: 0; border: 0; background: transparent; padding: 3px 1px; color: var(--ink); text-align: center; appearance: textfield; }
 .distance-input input::-webkit-inner-spin-button, .distance-input input::-webkit-outer-spin-button { appearance: none; margin: 0; }
-.mode-row { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8px; }
+.mode-row { display: grid; grid-template-columns: .85fr 1.28fr 1fr; gap: 8px; }
+.finish-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .mode { position: relative; cursor: pointer; }
 .mode input { opacity: 0; position: absolute; width: 1px; height: 1px; }
 .mode input:checked + .control { border-color: #89a57b; background: #e6eedc; }
-.mode svg { width: 17px; height: 17px; }
+.mode .control { gap: 5px; font-size: 12px; white-space: nowrap; }
+.mode svg { width: 15px; height: 15px; }
+.point-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 6px; }
+.point-list li { min-height: 43px; padding: 4px 6px 4px 9px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); }
+.point-badge { width: 24px; height: 24px; border-radius: 50%; display: grid; flex: none; place-items: center; background: var(--green); color: var(--lime); font-size: 12px; font-weight: 800; }
+.point-description { flex: 1; display: grid; font-size: 12px; font-weight: 700; }
+.point-description small { color: var(--muted); font-weight: 500; }
+.point-list .remove-point { border: 0; border-radius: 6px; min-height: 33px; min-width: 33px; padding: 0; background: transparent; font-size: 20px; line-height: 1; color: var(--green); }
+.point-list .remove-point:hover { background: #e6eedc; }
 
 .build { min-height: 57px; border: 1px solid transparent; background: var(--lime); font-size: 15px; font-weight: 800; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; padding: 0 17px; color: #1e2b14; text-align: left; transition: background .15s; }
 .build:hover:not(:disabled) { background: #bee746; }
 .build svg { width: 22px; height: 22px; stroke-width: 1.9; }
 
-.map-panel { isolation: isolate; min-width: 0; min-height: 665px; position: relative; border: 1px solid #d0dacf; background: #dfe8d9; border-radius: 23px; overflow: hidden; }
+.map-panel { isolation: isolate; align-self: start; min-width: 0; min-height: 665px; position: relative; border: 1px solid #d0dacf; background: #dfe8d9; border-radius: 23px; overflow: hidden; }
 #map { position: absolute; inset: 0; }
 .maplibregl-canvas-container.maplibregl-interactive { cursor: crosshair; }
 .maplibregl-canvas-container.maplibregl-interactive:active { cursor: grabbing; }
@@ -90,6 +99,7 @@ button.control:hover:not(:disabled), .mode:hover .control { border-color: #9aa89
 .maplibregl-ctrl-scale { border-color: #465b50 !important; color: #344838 !important; }
 .start-marker { width: 26px; height: 26px; border: 3px solid #fff; border-radius: 50%; background: #243e2c; display: grid; place-items: center; box-shadow: 0 2px 9px #243e2c5c; pointer-events: none; }
 .start-marker::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--lime); }
+.point-marker { width: 26px; height: 26px; border: 2px solid white; box-shadow: 0 2px 9px #243e2c5c; pointer-events: none; }
 .map-picker { position: absolute; inset: 0; pointer-events: none; }
 .map-cross { position: absolute; left: 50%; top: 50%; translate: -50% -50%; font-size: 34px; color: var(--green); line-height: 1; text-shadow: 0 0 4px #fff; }
 .map-picker button { position: absolute; bottom: 42px; left: 50%; translate: -50% 0; white-space: nowrap; padding: 0 14px; pointer-events: auto; box-shadow: 0 2px 8px #213b2522; }
@@ -117,6 +127,9 @@ dialog p { font-size: 14px; color: var(--muted); }
   .bar-inner, .layout, .footer { width: calc(100% - 48px); }
   .layout { grid-template-columns: minmax(270px, 315px) minmax(0, 1fr); gap: 24px; }
   .map-panel { min-height: 610px; }
+}
+@media (min-width: 721px) and (max-width: 1080px), (max-width: 370px) {
+  .mode svg { display: none; }
 }
 @media (min-width: 721px) and (max-height: 800px) {
   .layout { padding-top: 20px; }
